@@ -9,9 +9,12 @@ def greet_user(update, context):
     update.message.reply_text('Привет, пользователь! Ты вызвал команду /start')
 
 def talk_to_me(update, context):
-    user_text = update.message.text 
-    print(user_text)
-    update.message.reply_text(user_text + '!!!!!!!111111111')
+    user_text = update.message.text        
+    print(user_text) 
+    if '?' in user_text:
+        update.message.reply_text('На вопросы не отвечаю')
+    else:
+        update.message.reply_text(f'Ты написал: {user_text}!!!!!!!111111111')
 
 def main():
     mybot = Updater(settings.token, use_context=True)
