@@ -1,3 +1,4 @@
+from cities import CITIES
 import logging
 import ephem
 import settings
@@ -13,10 +14,13 @@ from emoji import emojize
 
 logging.basicConfig(filename='bot.log', level=logging.INFO)
 
-GREET_TEXT = '''Привет!
-Я самый лучший бот на свете.'''
-
 PLANETS = ('Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune')
+
+SMILES = {
+    'good': (':fire:', ':smile:', ':smiling_imp:', ':innocent:', ':thumbsup:'),
+    'bad': (':imp:', ':rage:', ':expressionless:', ':unamused:', ':confused:'),
+    'cat': (':smiley_cat:', ':smile_cat:', ':smirk_cat:', ':scream_cat:', ':joy_cat:'),
+}
 
 def planet(update: Update, context: CallbackContext) -> None:
     if not context.args:
@@ -44,8 +48,16 @@ def planet(update: Update, context: CallbackContext) -> None:
         constellation_rus, constellation_ukr = constellations[constellation]
         update.message.reply_text(f'{planet} в созвездии {constellation} ({constellation_rus}/{constellation_ukr}).')
 
+def get_smile(smile_type: str = 'good') -> str:
+    if smile_type not in SMILES:
+        smile_type = 'good'
+    smile = choice(SMILES[smile_type])
+    return emojize(smile, use_aliases=True)
+
 def greet_user(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(GREET_TEXT)
+    smile = get_smile()
+    user_name = update.effective_user.first_name
+    update.message.reply_text(f'Привет, {user_name}! Я самый лучший бот на свете {smile}')
     help(update, context)
 
 def help(update: Update, context: CallbackContext) -> None:
@@ -57,17 +69,16 @@ def help(update: Update, context: CallbackContext) -> None:
 def talk_to_me(update: Update, context: CallbackContext) -> None:
     user_text = update.message.text
     if '?' in user_text:
-        update.message.reply_text('На вопросы не отвечаю')
+        smile = get_smile('bad')
+        update.message.reply_text(f'На вопросы не отвечаю {smile}')
     else:
         update.message.reply_text(f'Ты написал: {user_text}!!!!!!!111111111')
 
 def calc(update: Update, context: CallbackContext) -> None:
-    '''
-    TODO /calc 7**888**888**888888888888888**888888888 через трерды следить и убивать?
-    TODO /calc ()
-    TODO /calc ()()
-    TODO мб переписать обработку аргументов
-    '''
+    # TODO /calc 7**888**888**888888888888888**888888888 через трерды следить и убивать?
+    # TODO /calc ()
+    # TODO /calc ()()
+    # TODO мб переписать обработку аргументов
     user_text = update.message.text[len('/calc'):].replace(' ', '').replace(',', '.').replace('^', '**').replace(':', '/')
     if not user_text:
         update.message.reply_text('Напиши через пробел после команды арифметическое выражения и я его вычислю. К примеру:\n/calc 2 + 2 * 2')
@@ -85,7 +96,29 @@ def calc(update: Update, context: CallbackContext) -> None:
         update.message.reply_text('НЕ СМЕЙ ДЕЛИТЬ НА НОЛЬ!')
 
 def cities(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Я пока не работаю!')
+    return 
+    if len(context.args) == 1:
+        city = context.args[0].lower()
+        if context.user_data.get('used_cities'):
+            if city[0] not in CITIES or city not in CITIES[city[0]]:
+                msg = f"Такого города не знаю, введите город на букву{context.user_data['last_letter']}"
+                update.message.reply_text(msg)
+            elif city in context.user_data['used_cities']:
+                update.message.reply_text('Увы такой город уже был')
+            else:
+                context.user_data['used_cities'].append('city')
+                # TODO опредляем последнюю букву и отвечаем своим городом
+                # TODO опредляем последнюю букву своего ответа и суём в context.user_data['last_letter']
+        else:
+            # TODO стартуем игру проверяя легитимен ли город.
+            pass
+    elif context.args:
+        msg = "Тебе следует вводить название одного города.\nВо вводе только один пробел после /cities"
+        update.message.reply_text(msg)
+    elif context.user_data.get('used_cities'):
+        update.message.reply_text(f"Введи /cities и город на букву {context.user_data['last_letter']}")
+    else:
+        update.message.reply_text(f"Для старта игры введи /cities и любой существующий в этом мире город")
 
 def guess(update: Update, context: CallbackContext) -> None:
     if len(context.args) == 1 and context.args[0].isdigit():
@@ -104,8 +137,8 @@ def guess(update: Update, context: CallbackContext) -> None:
 def cat(update: Update, context: CallbackContext) -> None:
     cats_list = glob('images/cat*.jp*g')
     cat = choice(cats_list)
-    chat_id = update.effective_chat.id
-    context.bot.send_photo(chat_id=chat_id, photo=open(cat, 'rb'))
+    chat_id = update.effective_chat.id    
+    context.bot.send_photo(chat_id=chat_id, photo=open(cat, 'rb'), caption=get_smile('cat'))
 
 COMMANDS = {
     'start': (greet_user, 'приветствие'), 
