@@ -1,3 +1,4 @@
+from telegram import bot
 from cities import CITIES
 import logging
 import ephem
@@ -95,8 +96,23 @@ def calc(update: Update, context: CallbackContext) -> None:
     except ZeroDivisionError:
         update.message.reply_text('НЕ СМЕЙ ДЕЛИТЬ НА НОЛЬ!')
 
+def last_letter(city: str) -> None:
+    for letter in reversed(city):
+        if letter in CITIES:
+            return letter
+
+def next_city(letter: str, used_cities: set) -> str:
+    for city in CITIES[letter]:
+        if city not in used_cities:
+            return city
+    return '' # кончились города у ПК
+
+def game_over(update: Update, used_cities: set, letter: str) -> None:
+    used_cities = set()
+    update.message.reply_text(f"Городов на букву {letter} больше не знаю. ТЫ ПОБЕДИЛ!")
+
 def cities(update: Update, context: CallbackContext) -> None:
-    return 
+    # TODO упростить функцию и разнести на более мелкие
     if len(context.args) == 1:
         city = context.args[0].lower()
         if context.user_data.get('used_cities'):
@@ -106,12 +122,27 @@ def cities(update: Update, context: CallbackContext) -> None:
             elif city in context.user_data['used_cities']:
                 update.message.reply_text('Увы такой город уже был')
             else:
-                context.user_data['used_cities'].append('city')
-                # TODO опредляем последнюю букву и отвечаем своим городом
-                # TODO опредляем последнюю букву своего ответа и суём в context.user_data['last_letter']
+                context.user_data['used_cities'].add(city)
+                bot_city = next_city(last_letter(city), context.user_data['used_cities'])
+                if not bot_city:
+                    game_over(update, context.user_data['used_cities'], last_letter(city))
+                    return
+                context.user_data['used_cities'].add(bot_city)
+                msg_part_1 = f'Мой город: {bot_city.title()}\n'
+                context.user_data['last_letter'] = last_letter(bot_city).upper()
+                msg_part_2 = f'Тебе на букву {context.user_data["last_letter"]}'
+                update.message.reply_text(msg_part_1 + msg_part_2)
+        elif city[0] not in CITIES or city not in CITIES[city[0]]:
+            update.message.reply_text("Такого города не знаю")
         else:
-            # TODO стартуем игру проверяя легитимен ли город.
-            pass
+            context.user_data['used_cities'] = set()
+            context.user_data['used_cities'].add(city)
+            bot_city = next_city(last_letter(city), context.user_data['used_cities'])
+            context.user_data['used_cities'].add(bot_city)
+            msg_part_1 = f'Мой город: {bot_city.title()}\n'
+            context.user_data['last_letter'] = last_letter(bot_city).upper()
+            msg_part_2 = f'Тебе на букву {context.user_data["last_letter"]}'
+            update.message.reply_text(msg_part_1 + msg_part_2)
     elif context.args:
         msg = "Тебе следует вводить название одного города.\nВо вводе только один пробел после /cities"
         update.message.reply_text(msg)
