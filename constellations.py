@@ -1,4 +1,4 @@
-constellations = {
+constellations_translate = {
     'Andromeda': ['Андромеда', 'Андромеда'],
     'Gemini': ['Близнецы', 'Близнята'],
     'Ursa Major': ['Большая Медведица', 'Велика Ведмедиця'],

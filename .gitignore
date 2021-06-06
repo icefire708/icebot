@@ -1,5 +1,5 @@
-# костыль с токеном в settings.py
-settings.py
+# костыль с токеном в token.py
+my_token.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
