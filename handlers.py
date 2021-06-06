@@ -93,21 +93,24 @@ def talk_to_me(update: Update, context: CallbackContext) -> None:
 
 def calc(update: Update, context: CallbackContext) -> None:
     # TODO /calc 7**888**888**888888888888888**888888888 через трерды следить и убивать?
-    # TODO /calc ()
-    # TODO /calc ()()
-    # TODO мб переписать обработку аргументов
-    user_text = update.message.text[len('/calc'):].replace(' ', '').replace(',', '.').replace('^', '**').replace(':', '/')
+    user_text = ''.join(context.args)
+    user_text = user_text.replace(' ', '').replace(',', '.').replace('^', '**').replace(':', '/')
     if not user_text:
         update.message.reply_text('Напиши через пробел после команды арифметическое выражения и я его вычислю. К примеру:\n/calc 2 + 2 * 2')
         return
-    legal_simvols = set('.%+-*/()0123456789')
-    if not set(user_text).issubset(legal_simvols):
+    digits = set('0123456789')
+    legal_simvols = set('.%+-*/()') | digits
+    input_simbols = set(user_text)
+    if not (digits & input_simbols):
+        update.message.reply_text('Ты не ввёл ни одной цифры')
+        return
+    if not input_simbols.issubset(legal_simvols):
         update.message.reply_text('Это какая-то шляпа, а не арифметическое выражение')
         return
     try:
         result = eval(user_text)
         update.message.reply_text(f'{user_text} = {result}')
-    except SyntaxError:
+    except (SyntaxError, TypeError):
         update.message.reply_text('Ты написал с ошибками, не могу вычислить')
     except ZeroDivisionError:
         update.message.reply_text('НЕ СМЕЙ ДЕЛИТЬ НА НОЛЬ!')
